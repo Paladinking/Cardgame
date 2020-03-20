@@ -9,18 +9,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 public class Game extends JPanel implements MouseListener {
-   /* private ArrayList<Card> deck;
-    private ArrayList<Card> playerOneHand;
-    private ArrayList<Card> playerTwoHand;
-    private ArrayList<Card> putDown;
+
     private final static String[] COLORS = {"HEARTS","DIAMONDS","CLUBS","SPADES"};
 
-    private String turn = "PLAYER ONE";
-    private int drawn = 0;
-    static int eightColor = 0;
-
-    */
-    private boolean strict;
+    private int eightColor = 0;
     private Socket socket;
     private ObjectInputStream inputStream;
     private ObjectOutputStream outputStream;
@@ -29,9 +21,9 @@ public class Game extends JPanel implements MouseListener {
     private Card putDown;
     private ArrayList<Integer> theirHands;
     private boolean myTurn = false;
+    private int myPos;
 
-
-
+    @SuppressWarnings("unchecked")
     private Game() {
         System.out.println(3);
         setPreferredSize(new Dimension(800, 600));
@@ -47,6 +39,7 @@ public class Game extends JPanel implements MouseListener {
             putDown = (Card) inputStream.readObject();
             theirHands = (ArrayList<Integer>) inputStream.readObject();
             myTurn = inputStream.readBoolean();
+            myPos = inputStream.read();
             new Thread(() -> {
                 while (true){
                     try {
@@ -94,13 +87,21 @@ public class Game extends JPanel implements MouseListener {
         g.setColor(Color.BLACK);
         g.fillRect(100, 200, 80, 140);
         putDown.drawCard(g, 200, 200);
-        /*if(putDown.value==8){
-            g.drawString(getColor(eightColor),225,260);
-        }*/
-        //g.drawString(turn, 10, 10);
         for (int i = 0; i < hand.size(); i++) {
             hand.get(i).drawCard(g, 10 + 82 * i, 380);
         }
+        g.drawRect(500,200,50,50);
+        g.drawString(getColor(eightColor),505,220);
+        g.setColor(Color.red);
+        if(myTurn) g.setColor(Color.green);
+        g.fillRect(500,20,40,40);
+        g.setColor(Color.black);
+        boolean b = false;
+        for(int i=0;i<theirHands.size();i++){
+            g.drawString("PLAYER "+(i+1)+": "+theirHands.get(i)+" card(s) left",40,80+20*i);
+        }
+        g.setFont(new Font("jeff",Font.PLAIN,20));
+        g.drawString("PLAYER "+(myPos+1),40,40);
 
     }
 
@@ -126,17 +127,24 @@ public class Game extends JPanel implements MouseListener {
     @Override
     public void mousePressed(MouseEvent e) {
         System.out.println(myTurn);
+        if(new Rectangle(500,200,50,50).contains(e.getX(),e.getY())){
+            int temp  = JOptionPane.showOptionDialog(null, "Select a Color",
+                    "Click a button",
+                    JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, COLORS, COLORS[0]);
+            if(temp !=-1){
+                eightColor = temp;
+            }
+        }
         if(myTurn){
             try {
                 outputStream.writeObject(new Point(e.getX(),e.getY()));
                 outputStream.flush();
                 outputStream.reset();
-
+                outputStream.write(eightColor);
+                outputStream.flush();
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-
-
         }
         repaint();
     }
