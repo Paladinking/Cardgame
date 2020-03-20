@@ -3,34 +3,33 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class Card implements Serializable {
-    public static final int HEARTS= 0, DIAMONDS = 1, CLUBS = 2, SPADES = 3;
 
-    int color, value;
+    private int color;
+    int value;
     String eightColor;
 
-    Card(int color, int value){
+    Card(int color, int value) {
         this.color = color;
         this.value = value;
-        this.eightColor ="";
+        this.eightColor = "";
     }
 
 
-
-    public void drawCard(Graphics g, int x, int y){
+    void drawCard(Graphics g, int x, int y) {
         g.setColor(Color.lightGray);
-        g.fillRect(x,y,80,140);
+        g.fillRect(x, y, 80, 140);
         g.setColor(Color.BLACK);
-        g.drawString(Game.getColor(color),x+20,y+20);
-        g.drawString(""+value,x+25,y+40);
-        g.drawString(eightColor,x+20,y+70);
+        g.drawString(Game.getColor(color), x + 20, y + 20);
+        g.drawString("" + value, x + 25, y + 40);
+        g.drawString(eightColor, x + 20, y + 70);
     }
 
 
-    public boolean fits(Card card, boolean strict, int eightColor) {
-        if(card.value==8){
-            if ( this.color == eightColor&&!strict) return true;
-            return this.value==8&&!strict;
-        } else if(!strict) {
+    boolean fits(Card card, boolean strict, int eightColor) {
+        if (card.value == 8) {
+            if (this.color == eightColor && !strict) return true;
+            return this.value == 8 && !strict;
+        } else if (!strict) {
             if (this.color == card.color) return true;
             if (this.value == card.value) return true;
             return (this.value == 8);
@@ -38,9 +37,14 @@ public class Card implements Serializable {
             return this.value == card.value;
         }
     }
+    void move(ArrayList<Card> from, ArrayList<Card> to){
+        to.add(this);
+        from.remove(this);
+    }
+
     @Override
-    public String toString(){
-        return "Card[value="+value+",color="+color+"]";
+    public String toString() {
+        return "Card[value=" + value + ",color=" + color + "]";
     }
 
 }

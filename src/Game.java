@@ -10,10 +10,9 @@ import java.util.ArrayList;
 
 public class Game extends JPanel implements MouseListener {
 
-    private final static String[] COLORS = {"HEARTS","DIAMONDS","CLUBS","SPADES"};
+    private final static String[] COLORS = {"HEARTS", "DIAMONDS", "CLUBS", "SPADES"};
 
     private int eightColor = 0;
-    private Socket socket;
     private ObjectInputStream inputStream;
     private ObjectOutputStream outputStream;
 
@@ -23,14 +22,16 @@ public class Game extends JPanel implements MouseListener {
     private boolean myTurn = false;
     private int myPos;
 
+    /**
+     * @noinspection InfiniteLoopStatement
+     */
     @SuppressWarnings("unchecked")
     private Game() {
-        System.out.println(3);
         setPreferredSize(new Dimension(800, 600));
         setFocusable(true);
         this.addMouseListener(this);
         try {
-            socket = new Socket("localhost",6066);
+            Socket socket = new Socket("localhost", 6066);
             inputStream = new ObjectInputStream(socket.getInputStream());
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             outputStream.flush();
@@ -41,18 +42,13 @@ public class Game extends JPanel implements MouseListener {
             myTurn = inputStream.readBoolean();
             myPos = inputStream.read();
             new Thread(() -> {
-                while (true){
+                while (true) {
                     try {
-                        System.out.println("hej");
                         hand = (ArrayList<Card>) inputStream.readObject();
-                        for (Card c: hand) {
-                            System.out.println(c.toString());
-                        }
                         putDown = (Card) inputStream.readObject();
-                        System.out.println(putDown.toString());
                         theirHands = (ArrayList<Integer>) inputStream.readObject();
                         myTurn = inputStream.readBoolean();
-                    } catch (IOException | ClassNotFoundException e){
+                    } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
                     }
                     repaint();
@@ -66,7 +62,6 @@ public class Game extends JPanel implements MouseListener {
 
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
-            System.out.println(1);
             JFrame f = new JFrame();
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             f.add(new Game());
@@ -74,8 +69,6 @@ public class Game extends JPanel implements MouseListener {
             f.setLocationRelativeTo(null);
             f.setTitle("Vändåtta");
             f.setVisible(true);
-            System.out.println(2);
-
         });
 
     }
@@ -90,19 +83,18 @@ public class Game extends JPanel implements MouseListener {
         for (int i = 0; i < hand.size(); i++) {
             hand.get(i).drawCard(g, 10 + 82 * i, 380);
         }
-        g.drawRect(500,200,50,50);
-        g.drawString(getColor(eightColor),505,220);
         g.setColor(Color.red);
-        if(myTurn) g.setColor(Color.green);
-        g.fillRect(500,20,40,40);
+        if (myTurn) g.setColor(Color.green);
+        g.fillRect(500, 20, 40, 40);
         g.setColor(Color.black);
-        boolean b = false;
-        for(int i=0;i<theirHands.size();i++){
-            g.drawString("PLAYER "+(i+1)+": "+theirHands.get(i)+" card(s) left",40,80+20*i);
+        for (int i = 0; i < theirHands.size(); i++) {
+            g.drawString("PLAYER " + (i + 1) + ": " + theirHands.get(i) + " card(s) left", 40, 80 + 20 * i);
         }
-        g.setFont(new Font("jeff",Font.PLAIN,20));
-        g.drawString("PLAYER "+(myPos+1),40,40);
-
+        g.setFont(new Font("jeff", Font.PLAIN, 20));
+        g.drawString("PLAYER " + (myPos + 1), 40, 40);
+        if(hand.size()==0){
+            g.drawString("You Won",120,120);
+        }
     }
 
     static String getColor(int c) {
@@ -126,18 +118,21 @@ public class Game extends JPanel implements MouseListener {
 
     @Override
     public void mousePressed(MouseEvent e) {
-        System.out.println(myTurn);
-        if(new Rectangle(500,200,50,50).contains(e.getX(),e.getY())){
-            int temp  = JOptionPane.showOptionDialog(null, "Select a Color",
-                    "Click a button",
-                    JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, COLORS, COLORS[0]);
-            if(temp !=-1){
-                eightColor = temp;
+        if (hand.size() > 1) {
+            for (int i = 0; i < hand.size(); i++) {
+                if (new Rectangle(10 + 82 * i, 380, 80, 140).contains(e.getX(), e.getY()) && hand.get(i).value == 8) {
+                    int temp = JOptionPane.showOptionDialog(null, "Select a Color",
+                            "Click a button",
+                            JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, COLORS, COLORS[0]);
+                    if (temp != -1) {
+                        eightColor = temp;
+                    }
+                }
             }
         }
-        if(myTurn){
+        if (myTurn) {
             try {
-                outputStream.writeObject(new Point(e.getX(),e.getY()));
+                outputStream.writeObject(new Point(e.getX(), e.getY()));
                 outputStream.flush();
                 outputStream.reset();
                 outputStream.write(eightColor);

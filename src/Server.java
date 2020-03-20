@@ -1,27 +1,21 @@
-import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Random;
 
 public class Server extends Thread {
 
-    private static final int PLAYERS =2;
+    private static final int PLAYERS = 2;
 
     private ArrayList<Card> deck;
-    //private ArrayList<Card> playerOneHand;
-    //private ArrayList<Card> playerTwoHand;
     private ArrayList<Card> putDown;
-    private ServerSocket socket;
     private ArrayList<Player> players;
     private int turn = 0;
-    static int eightColor = 0;
-    private final static String[] COLORS = {"HEARTS", "DIAMONDS", "CLUBS", "SPADES"};
+    private static int eightColor = 0;
     private boolean strict;
     private int drawn;
 
@@ -41,7 +35,7 @@ public class Server extends Thread {
             deck.set(randomIndexToSwap, deck.get(i));
             deck.set(i, temp);
         }
-        while (deck.get(0).value==8){
+        while (deck.get(0).value == 8) {
             int randomIndexToSwap = rand.nextInt(deck.size());
             Card temp = deck.get(randomIndexToSwap);
             deck.set(randomIndexToSwap, deck.get(0));
@@ -51,7 +45,7 @@ public class Server extends Thread {
         deck.remove(0);
 
         try {
-            socket = new ServerSocket(6066);
+            ServerSocket socket = new ServerSocket(6066);
             System.out.println(1);
             players = new ArrayList<>();
             for (int i = 0; i < PLAYERS; i++) {
@@ -60,11 +54,11 @@ public class Server extends Thread {
                 ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
                 oos.flush();
                 ArrayList<Card> hand = new ArrayList<>();
-                for(int j=0;j<7;j++){
+                for (int j = 0; j < 7; j++) {
                     hand.add(deck.get(0));
                     deck.remove(0);
                 }
-                players.add(new Player(s, ois, oos, hand));
+                players.add(new Player(ois, oos, hand));
             }
             this.start();
 
@@ -75,13 +69,16 @@ public class Server extends Thread {
 
     }
 
+    /**
+     * @noinspection InfiniteLoopStatement
+     */
     @Override
     public void run() {
-        for (Player p:players){
+        for (Player p : players) {
             try {
                 p.outputStream.writeObject(p.hand);
                 p.outputStream.flush();
-                p.outputStream.writeObject(putDown.get(putDown.size()-1));
+                p.outputStream.writeObject(putDown.get(putDown.size() - 1));
                 p.outputStream.flush();
                 ArrayList<Integer> other = new ArrayList<>();
                 for (Player player : players) {
@@ -89,7 +86,7 @@ public class Server extends Thread {
                 }
                 p.outputStream.writeObject(other);
                 p.outputStream.flush();
-                p.outputStream.writeBoolean(players.indexOf(p)==turn);
+                p.outputStream.writeBoolean(players.indexOf(p) == turn);
                 p.outputStream.flush();
                 p.outputStream.write(players.indexOf(p));
                 p.outputStream.flush();
@@ -100,30 +97,35 @@ public class Server extends Thread {
         }
         while (true) {
             try {
-                Point p = (Point) players.get(turn).inputStream.readObject();
+                Player player = players.get(turn);
+                Point p = (Point) player.inputStream.readObject();
                 boolean read = false;
-                System.out.println(eightColor);
-                for (int i = 0; i < players.get(turn).hand.size(); i++) {
-                    if (new Rectangle(10 + 82 * i, 380, 80, 140).contains(p.getX(), p.getY())) {
-                        System.out.println(players.get(turn).hand.get(i).toString());
-                        if (players.get(turn).hand.get(i).fits(putDown.get(putDown.size() - 1), strict,eightColor)) {
-
-                            putDown.add(players.get(turn).hand.get(i));
-                            players.get(turn).hand.remove(players.get(turn).hand.get(i));
-                            eightColor = players.get(turn).inputStream.read();
-                            read = true;
-
-                            send(players.get(turn));
-                            strict = true;
-                            boolean can = false;
-                            for (Card c : players.get(turn).hand) {
-                                if (c.fits(putDown.get(putDown.size() - 1), strict,eightColor)) can = true;
-                            }
-                            if (!can) {
-                                passTurn();
+                if (!(player.hand.size() == 1 && player.hand.get(0).value == 8)) {
+                    for (int i = 0; i < player.hand.size(); i++) {
+                        if (new Rectangle(10 + 82 * i, 380, 80, 140).contains(p.getX(), p.getY())) {
+                            if (player.hand.get(i).fits(putDown.get(putDown.size() - 1), strict, eightColor)) {
+                                if (player.hand.get(i).value == 1) {
+                                    for (Player play : players) {
+                                        if (play != player&&play.hand.size()>0) {
+                                            deck.get(0).move(deck, play.hand);
+                                            send(play);
+                                        }
+                                    }
+                                }
+                                player.hand.get(i).move(player.hand, putDown);
+                                eightColor = player.inputStream.read();
+                                read = true;
+                                send(player);
+                                strict = true;
+                                boolean can = false;
+                                for (Card c : player.hand) {
+                                    if (c.fits(putDown.get(putDown.size() - 1), strict, eightColor)) can = true;
+                                }
+                                if (!can) {
+                                    passTurn();
+                                }
                             }
                         }
-
                     }
                 }
                 if (new Rectangle(100, 200, 80, 140).contains(p.getX(), p.getY())) {
@@ -131,9 +133,10 @@ public class Server extends Thread {
                         passTurn();
                     }
                     boolean can = false;
-                    for (Card c : players.get(turn).hand) {
-                        if (c.fits(putDown.get(putDown.size() - 1), strict,eightColor)) can = true;
+                    for (Card c : player.hand) {
+                        if (c.fits(putDown.get(putDown.size() - 1), strict, eightColor)) can = true;
                     }
+                    if (player.hand.size() == 1 && player.hand.get(0).value == 8) can = false;
                     if (deck.size() == 0) {
                         System.out.println("Blandar om");
                         Card temp = putDown.get(putDown.size() - 1);
@@ -154,19 +157,16 @@ public class Server extends Thread {
                         if (drawn == 3) {
                             passTurn();
                         } else {
-                            players.get(turn).hand.add(deck.get(0));
-                            deck.remove(0);
+                            deck.get(0).move(deck, player.hand);
                             drawn++;
-                            send(players.get(turn));
+                            send(player);
                         }
                     }
                 }
-                if(!read) players.get(turn).inputStream.read();
-            } catch (IOException e) {
+                if (!read) //noinspection ResultOfMethodCallIgnored
+                    player.inputStream.read();
+            } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-
-
             }
 
 
@@ -177,12 +177,12 @@ public class Server extends Thread {
         player.outputStream.reset();
         player.outputStream.writeObject(player.hand);
         player.outputStream.reset();
-        if(putDown.get(putDown.size()-1).value==8){
-            putDown.get(putDown.size()-1).eightColor = Game.getColor(eightColor);
+        if (putDown.get(putDown.size() - 1).value == 8) {
+            putDown.get(putDown.size() - 1).eightColor = Game.getColor(eightColor);
         } else {
-            putDown.get(putDown.size()-1).eightColor = "";
+            putDown.get(putDown.size() - 1).eightColor = "";
         }
-        player.outputStream.writeObject(putDown.get(putDown.size()-1));
+        player.outputStream.writeObject(putDown.get(putDown.size() - 1));
         player.outputStream.reset();
         ArrayList<Integer> other = new ArrayList<>();
         for (Player p : players) {
@@ -190,17 +190,19 @@ public class Server extends Thread {
         }
         player.outputStream.writeObject(other);
         player.outputStream.reset();
-        player.outputStream.writeBoolean(players.indexOf(player)==turn);
+        player.outputStream.writeBoolean(players.indexOf(player) == turn);
         player.outputStream.reset();
     }
 
     private void passTurn() throws IOException {
         drawn = 0;
-        turn++;
-        if (turn >= PLAYERS) turn = 0;
+        do{
+            turn++;
+            if (turn >= PLAYERS) turn = 0;
+        } while (players.get(turn).hand.size()==0);
         strict = false;
 
-        for (Player p:players){
+        for (Player p : players) {
             send(p);
         }
 
@@ -209,7 +211,6 @@ public class Server extends Thread {
 
     public static void main(String[] args) {
         new Server();
-
     }
 
 
