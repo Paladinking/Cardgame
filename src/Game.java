@@ -29,13 +29,13 @@ public class Game extends JPanel implements MouseListener {
      * @noinspection InfiniteLoopStatement
      */
     @SuppressWarnings("unchecked")
-     Game() {
+     private Game(int port,String ip) {
         setPreferredSize(new Dimension(800, 600));
         setFocusable(true);
         requestFocus();
         this.addMouseListener(this);
         try {
-            Socket socket = new Socket("localhost", 6066);
+            Socket socket = new Socket(ip, port);
             inputStream = new ObjectInputStream(socket.getInputStream());
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             outputStream.flush();
@@ -89,11 +89,11 @@ public class Game extends JPanel implements MouseListener {
     }
 
 
-    static void start() {
+    static void start(int port, String ip) {
         EventQueue.invokeLater(() -> {
             JFrame f = new JFrame();
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            f.add(new Game());
+            f.add(new Game(port,ip));
             f.pack();
             f.setLocationRelativeTo(null);
             f.setTitle("Vändåtta");

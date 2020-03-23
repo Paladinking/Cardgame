@@ -9,7 +9,6 @@ import java.util.Random;
 
 public class Server extends Thread {
 
-    private static final int PLAYERS = 1;
 
     private ArrayList<Card> deck;
     private ArrayList<Card> putDown;
@@ -18,9 +17,11 @@ public class Server extends Thread {
     private static int eightColor = 0;
     private boolean strict;
     private int drawn;
+    private int playerNr;
 
 
-    Server() {
+    Server(int port,int playerNr) {
+        this.playerNr = playerNr;
         deck = new ArrayList<>();
         putDown = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -45,9 +46,9 @@ public class Server extends Thread {
         deck.remove(0);
 
         try {
-            ServerSocket socket = new ServerSocket(6066);
+            ServerSocket socket = new ServerSocket(port);
             players = new ArrayList<>();
-            for (int i = 0; i < PLAYERS; i++) {
+            for (int i = 0; i < playerNr; i++) {
                 Socket s = socket.accept();
                 ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
                 ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
@@ -132,6 +133,11 @@ public class Server extends Thread {
                                             send(play);
                                         }
                                     }
+                                    player.hand.get(i).move(player.hand, putDown);
+                                    eightColor = player.inputStream.read();
+                                    read = true;
+                                    send(player);
+                                    break;
                                 }
                                 player.hand.get(i).move(player.hand, putDown);
                                 eightColor = player.inputStream.read();
@@ -180,7 +186,14 @@ public class Server extends Thread {
                         } else {
                             deck.get(0).move(deck, player.hand);
                             drawn++;
-                            send(player);
+                            for (Card c : player.hand) {
+                                if (c.fits(putDown.get(putDown.size() - 1), strict, eightColor)) can = true;
+                            }
+                            if(can||drawn<3) {
+                                send(player);
+                            } else{
+                                passTurn();
+                            }
                         }
                     }
                 }
@@ -219,7 +232,7 @@ public class Server extends Thread {
         drawn = 0;
         do{
             turn++;
-            if (turn >= PLAYERS) turn = 0;
+            if (turn >= playerNr) turn = 0;
         } while (players.get(turn).hand.size()==0);
         strict = false;
 
@@ -230,9 +243,9 @@ public class Server extends Thread {
     }
 
 
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         new Server();
-    }
+    }*/
 
 
 }
