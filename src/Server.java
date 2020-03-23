@@ -9,7 +9,7 @@ import java.util.Random;
 
 public class Server extends Thread {
 
-    private static final int PLAYERS = 2;
+    private static final int PLAYERS = 1;
 
     private ArrayList<Card> deck;
     private ArrayList<Card> putDown;
@@ -20,7 +20,7 @@ public class Server extends Thread {
     private int drawn;
 
 
-    private Server() {
+    Server() {
         deck = new ArrayList<>();
         putDown = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -46,7 +46,6 @@ public class Server extends Thread {
 
         try {
             ServerSocket socket = new ServerSocket(6066);
-            System.out.println(1);
             players = new ArrayList<>();
             for (int i = 0; i < PLAYERS; i++) {
                 Socket s = socket.accept();
@@ -104,9 +103,31 @@ public class Server extends Thread {
                     for (int i = 0; i < player.hand.size(); i++) {
                         if (new Rectangle(10 + 82 * i, 380, 80, 140).contains(p.getX(), p.getY())) {
                             if (player.hand.get(i).fits(putDown.get(putDown.size() - 1), strict, eightColor)) {
-                                if (player.hand.get(i).value == 1) {
+                                if(player.hand.get(i).value== 8){
+                                    boolean can = false;
+                                    for (Card c : player.hand){
+                                        if(c!=player.hand.get(i)) {
+                                            if (c.fits(putDown.get(putDown.size() - 1), strict, eightColor)) can = true;
+                                        }
+                                    }
+                                    if(can) break;
+                                } else if (player.hand.get(i).value == 1) {
                                     for (Player play : players) {
                                         if (play != player&&play.hand.size()>0) {
+                                            if(deck.size()==0){
+                                                System.out.println("Blandar om");
+                                                Card temp = putDown.get(putDown.size() - 1);
+                                                putDown.remove(putDown.get(putDown.size() - 1));
+                                                Random rand = new Random();
+                                                for (int j = 0; j < putDown.size(); j++) {
+                                                    int randomIndexToSwap = rand.nextInt(putDown.size());
+                                                    Card temp2 = putDown.get(randomIndexToSwap);
+                                                    putDown.set(randomIndexToSwap, putDown.get(j));
+                                                    putDown.set(j, temp2);
+                                                }
+                                                deck.addAll(putDown);
+                                                putDown.add(temp);
+                                            }
                                             deck.get(0).move(deck, play.hand);
                                             send(play);
                                         }
@@ -178,9 +199,9 @@ public class Server extends Thread {
         player.outputStream.writeObject(player.hand);
         player.outputStream.reset();
         if (putDown.get(putDown.size() - 1).value == 8) {
-            putDown.get(putDown.size() - 1).eightColor = Game.getColor(eightColor);
+            putDown.get(putDown.size() - 1).eightColor = eightColor;
         } else {
-            putDown.get(putDown.size() - 1).eightColor = "";
+            putDown.get(putDown.size() - 1).eightColor = putDown.get(putDown.size() - 1).color;
         }
         player.outputStream.writeObject(putDown.get(putDown.size() - 1));
         player.outputStream.reset();

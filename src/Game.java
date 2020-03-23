@@ -1,7 +1,9 @@
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -21,14 +23,16 @@ public class Game extends JPanel implements MouseListener {
     private ArrayList<Integer> theirHands;
     private boolean myTurn = false;
     private int myPos;
+    static final BufferedImage[][] images;
 
     /**
      * @noinspection InfiniteLoopStatement
      */
     @SuppressWarnings("unchecked")
-    private Game() {
+     Game() {
         setPreferredSize(new Dimension(800, 600));
         setFocusable(true);
+        requestFocus();
         this.addMouseListener(this);
         try {
             Socket socket = new Socket("localhost", 6066);
@@ -55,12 +59,37 @@ public class Game extends JPanel implements MouseListener {
                 }
             }).start();
         } catch (IOException | ClassNotFoundException e) {
+            this.setVisible(false);
+            Main.main(new String[]{"Could not Connect"});
+        }
+    }
+
+    static {
+        images = new BufferedImage[4][13];
+        try {
+            BufferedImage h, d, c, s;
+            h = ImageIO.read(Game.class.getResource("assets/hearts.png"));
+            d = ImageIO.read(Game.class.getResource("assets/diamonds.png"));
+            c = ImageIO.read(Game.class.getResource("assets/clubs.png"));
+            s = ImageIO.read(Game.class.getResource("assets/spades.png"));
+            for (int i = 0; i < 13; i++) {
+
+                BufferedImage h2 = h.getSubimage(80 * (i % 7), 120 * (i / 7), 80, 120);
+                BufferedImage d2 = d.getSubimage(80 * (i % 7), 120 * (i / 7), 80, 120);
+                BufferedImage c2 = c.getSubimage(80 * (i % 7), 120 * (i / 7), 80, 120);
+                BufferedImage s2 = s.getSubimage(80 * (i % 7), 120 * (i / 7), 80, 120);
+                images[0][i] = h2;
+                images[1][i] = d2;
+                images[2][i] = c2;
+                images[3][i] = s2;
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
 
-    public static void main(String[] args) {
+    static void start() {
         EventQueue.invokeLater(() -> {
             JFrame f = new JFrame();
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -75,10 +104,10 @@ public class Game extends JPanel implements MouseListener {
 
     @Override
     public void paintComponent(Graphics g) {
-        g.setColor(Color.WHITE);
+        g.setColor(new Color(0, 237, 255));
         g.fillRect(0, 0, this.getWidth(), this.getHeight());
         g.setColor(Color.BLACK);
-        g.fillRect(100, 200, 80, 140);
+        g.fillRect(100, 200, 80, 120);
         putDown.drawCard(g, 200, 200);
         for (int i = 0; i < hand.size(); i++) {
             hand.get(i).drawCard(g, 10 + 82 * i, 380);
@@ -92,24 +121,11 @@ public class Game extends JPanel implements MouseListener {
         }
         g.setFont(new Font("jeff", Font.PLAIN, 20));
         g.drawString("PLAYER " + (myPos + 1), 40, 40);
-        if(hand.size()==0){
-            g.drawString("You Won",120,120);
+        if (hand.size() == 0) {
+            g.drawString("You Won", 120, 120);
         }
     }
 
-    static String getColor(int c) {
-        switch (c) {
-            case 0:
-                return "Hearts";
-            case 1:
-                return "Diamonds";
-            case 2:
-                return "Clubs";
-            case 3:
-                return "Spades";
-        }
-        return "";
-    }
 
     @Override
     public void mouseClicked(MouseEvent e) {
@@ -121,11 +137,19 @@ public class Game extends JPanel implements MouseListener {
         if (hand.size() > 1) {
             for (int i = 0; i < hand.size(); i++) {
                 if (new Rectangle(10 + 82 * i, 380, 80, 140).contains(e.getX(), e.getY()) && hand.get(i).value == 8) {
-                    int temp = JOptionPane.showOptionDialog(null, "Select a Color",
-                            "Click a button",
-                            JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, COLORS, COLORS[0]);
-                    if (temp != -1) {
-                        eightColor = temp;
+                    boolean can = false;
+                    for (Card c : hand) {
+                        if (c != hand.get(i)) {
+                            if (c.fits(putDown, false, 0)) can = true;
+                        }
+                    }
+                    if (!can) {
+                        int temp = JOptionPane.showOptionDialog(null, "Select a Color",
+                                "Click a button",
+                                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, COLORS, COLORS[0]);
+                        if (temp != -1) {
+                            eightColor = temp;
+                        }
                     }
                 }
             }

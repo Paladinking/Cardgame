@@ -4,24 +4,20 @@ import java.util.ArrayList;
 
 public class Card implements Serializable {
 
-    private int color;
+    int color;
     int value;
-    String eightColor;
+    int eightColor;
 
     Card(int color, int value) {
         this.color = color;
         this.value = value;
-        this.eightColor = "";
+        this.eightColor = this.color;
     }
 
 
     void drawCard(Graphics g, int x, int y) {
-        g.setColor(Color.lightGray);
-        g.fillRect(x, y, 80, 140);
-        g.setColor(Color.BLACK);
-        g.drawString(Game.getColor(color), x + 20, y + 20);
-        g.drawString("" + value, x + 25, y + 40);
-        g.drawString(eightColor, x + 20, y + 70);
+        g.drawImage(Game.images[eightColor][value-1],x,y,null);
+
     }
 
 
