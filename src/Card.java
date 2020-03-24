@@ -7,6 +7,7 @@ public class Card implements Serializable {
     int color;
     int value;
     int eightColor;
+    private static  Image[][] images;
 
     Card(int color, int value) {
         this.color = color;
@@ -14,9 +15,11 @@ public class Card implements Serializable {
         this.eightColor = this.color;
     }
 
-
+    static void loadImages(Image[][] imgs){
+        images = imgs;
+    }
     void drawCard(Graphics g, int x, int y) {
-        g.drawImage(Game.images[eightColor][value-1],x,y,null);
+        g.drawImage(images[eightColor][value-1],x,y,null);
 
     }
 

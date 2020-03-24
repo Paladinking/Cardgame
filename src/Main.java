@@ -39,7 +39,7 @@ public class Main extends JFrame implements MouseListener {
 
         if (new Rectangle(this.getWidth() / 2 - 50 + this.getComponent(0).getX(), 200 + this.getComponent(0).getY(), 100, 40).contains(e.getX(), e.getY())) {
             int port = 0;
-            String ip = null;
+            String ip;
             JTextField portField = new JTextField(5);
             JTextField ipField = new JTextField(5);
             JPanel myPanel = new JPanel();
@@ -87,9 +87,7 @@ public class Main extends JFrame implements MouseListener {
                 if(port!=0&&players!=0) {
                     int finalPort = port;
                     int finalPlayers = players;
-                    new Thread(() -> {
-                        new Server(finalPort,finalPlayers);
-                    }).start();
+                    new Thread(() -> new Server(finalPort,finalPlayers)).start();
                     Game.start(port, "localhost");
                     this.setVisible(false);
                     this.dispose();

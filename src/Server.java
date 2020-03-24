@@ -47,6 +47,7 @@ public class Server extends Thread {
 
         try {
             ServerSocket socket = new ServerSocket(port);
+            socket.setSoTimeout(2000);
             players = new ArrayList<>();
             for (int i = 0; i < playerNr; i++) {
                 Socket s = socket.accept();

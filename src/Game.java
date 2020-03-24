@@ -23,7 +23,6 @@ public class Game extends JPanel implements MouseListener {
     private ArrayList<Integer> theirHands;
     private boolean myTurn = false;
     private int myPos;
-    static final BufferedImage[][] images;
 
     /**
      * @noinspection InfiniteLoopStatement
@@ -33,6 +32,7 @@ public class Game extends JPanel implements MouseListener {
         setPreferredSize(new Dimension(800, 600));
         setFocusable(true);
         requestFocus();
+        initImages();
         this.addMouseListener(this);
         try {
             Socket socket = new Socket(ip, port);
@@ -64,14 +64,14 @@ public class Game extends JPanel implements MouseListener {
         }
     }
 
-    static {
-        images = new BufferedImage[4][13];
+   private void initImages() {
+       Image[][] images = new BufferedImage[4][13];
         try {
             BufferedImage h, d, c, s;
-            h = ImageIO.read(Game.class.getResource("assets/hearts.png"));
-            d = ImageIO.read(Game.class.getResource("assets/diamonds.png"));
-            c = ImageIO.read(Game.class.getResource("assets/clubs.png"));
-            s = ImageIO.read(Game.class.getResource("assets/spades.png"));
+            h = ImageIO.read(Game.class.getResource("hearts.png"));
+            d = ImageIO.read(Game.class.getResource("diamonds.png"));
+            c = ImageIO.read(Game.class.getResource("clubs.png"));
+            s = ImageIO.read(Game.class.getResource("spades.png"));
             for (int i = 0; i < 13; i++) {
 
                 BufferedImage h2 = h.getSubimage(80 * (i % 7), 120 * (i / 7), 80, 120);
@@ -86,6 +86,7 @@ public class Game extends JPanel implements MouseListener {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        Card.loadImages(images);
     }
 
 
